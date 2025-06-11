@@ -5,8 +5,8 @@ A modern, responsive web application for tracking weight progress with interacti
 ## ✨ Features
 
 ### 📊 Weight Tracking
-- **Add weight entries** with date and time
-- **Set goal weight** and track progress
+- **Add weight entries** with date
+- **Set goal weight** as a one-time setting
 - **Multiple entries per day** automatically averaged
 - **Individual entry management** with granular deletion
 
@@ -16,7 +16,13 @@ A modern, responsive web application for tracking weight progress with interacti
 - **Daily averaging** for clean chart visualization
 - **Detailed tooltips** showing entry information
 
-### 📱 Mobile-Friendly Design
+### � Data Management
+- **Demo data** with realistic 90-day weight loss journey
+- **Data export** to JSON for backup and portability
+- **Safe demo data removal** (preserves manual entries)
+- **Complete data overview** with entry statistics
+
+### �📱 Mobile-Friendly Design
 - **Responsive layout** that works on all devices
 - **Touch-friendly** buttons and form inputs
 - **Optimized navigation** with collapsible sidebar
@@ -69,31 +75,36 @@ A modern, responsive web application for tracking weight progress with interacti
 ## 📊 Usage
 
 ### Adding Weight Entries
-1. Navigate to **Weight Tracker**
-2. Enter your weight, date, and time
+1. Use the **Dashboard** tab
+2. Enter your weight and date
 3. Click **Add Weight**
 
 ### Viewing Progress
-- **Dashboard** shows overview with recent trends
-- **Weight Tracker** shows detailed charts and entry history
-- Toggle between **7, 30, and 90-day** chart views
+- **Dashboard** shows weight logging form and progress chart
+- **Edit** tab shows recent entries, stats, and goal weight settings
+- **Demo Data** tab for managing demo data and exporting information
+- Toggle between **7, 30, and 90-day** chart views on Dashboard
 
 ### Managing Data
+- **Edit tab** for managing entries and goal weight settings
+- **Demo Data tab** for demo data management and data export
 - **Show All** / **Show Daily Avg** toggle in Recent Entries
 - **Delete individual entries** in "Show All" mode
+- **Set goal weight** in Edit tab settings
 - **Load demo data** to see how the app works
 - **Clear demo data** safely (preserves manual entries)
+- **Export all data** as JSON for backup
 
 ## 🗂️ Project Structure
 
 ```
 src/
 ├── components/          # Reusable UI components
-│   ├── Navigation.jsx   # Sidebar navigation
 │   └── DemoDataControls.jsx  # Demo data management
 ├── pages/              # Main application pages
-│   ├── Dashboard.jsx   # Overview and summary
-│   └── WeightTracker.jsx  # Detailed weight management
+│   ├── Dashboard.jsx   # Weight logging and progress chart
+│   ├── EditTab.jsx     # Entry management and settings
+│   └── DemoDataTab.jsx # Demo data management and export
 ├── utils/              # Utility functions
 │   ├── dataProcessing.js   # Data averaging and processing
 │   └── generateFakeData.js # Demo data generation

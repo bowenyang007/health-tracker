@@ -4,6 +4,9 @@
 // Functions for processing weight data, including handling multiple entries per day
 // ============================================================================
 
+// Import format function from date-fns
+import { format, subDays } from 'date-fns'
+
 /**
  * Groups weight entries by date and averages multiple entries per day
  * @param {Array} weights - Array of weight entries
@@ -38,16 +41,11 @@ export const averageWeightsByDay = (weights) => {
       new Date(entry.timestamp) > new Date(latest.timestamp) ? entry : latest
     )
 
-    // Create a list of times for display
-    const times = entries.map(entry => entry.time || format(new Date(entry.timestamp), 'HH:mm')).sort()
-
     return {
       ...latestEntry,
       weight: Math.round(averageWeight * 10) / 10, // Round to 1 decimal
       isAveraged: entries.length > 1, // Flag to indicate this is an average
-      originalEntries: entries.length, // Track how many entries were averaged
-      times: times, // Array of times for this date
-      timeRange: times.length > 1 ? `${times[0]}-${times[times.length - 1]}` : times[0] // Time range display
+      originalEntries: entries.length // Track how many entries were averaged
     }
   })
 
@@ -56,24 +54,76 @@ export const averageWeightsByDay = (weights) => {
 }
 
 /**
- * Prepares chart data with daily averages
+ * Prepares chart data with consistent X-axis intervals
  * @param {Array} weights - Raw weight entries
  * @param {number} days - Number of recent days to include
  * @param {string} dateFormat - Format for chart labels
- * @returns {Array} - Chart-ready data with averaged weights
+ * @returns {Array} - Chart-ready data with consistent spacing
  */
 export const prepareChartData = (weights, days, dateFormat = 'MMM dd') => {
   const averagedWeights = averageWeightsByDay(weights)
-  const recentWeights = averagedWeights.slice(-days)
-  
-  return recentWeights.map(entry => ({
-    date: format(new Date(entry.date), dateFormat),
-    weight: entry.weight,
-    isAveraged: entry.isAveraged || false,
-    originalEntries: entry.originalEntries || 1,
-    timeRange: entry.timeRange || entry.time || null
-  }))
+
+  if (averagedWeights.length === 0) return []
+
+  // Get the date range
+  const endDate = new Date()
+  const startDate = subDays(endDate, days - 1)
+
+  // Determine appropriate interval based on period
+  let interval
+  let maxPoints
+
+  if (days <= 7) {
+    interval = 1 // Daily for 7 days
+    maxPoints = 7
+  } else if (days <= 30) {
+    interval = 2 // Every 2 days for 30 days (15 points)
+    maxPoints = 15
+  } else {
+    interval = 7 // Weekly for 90 days (13 points)
+    maxPoints = 13
+  }
+
+  // Create evenly spaced date points
+  const chartData = []
+  const totalDays = days
+  const step = Math.max(1, Math.floor(totalDays / maxPoints))
+
+  for (let i = 0; i < totalDays; i += step) {
+    const targetDate = format(subDays(endDate, totalDays - 1 - i), 'yyyy-MM-dd')
+
+    // Find the closest weight entry to this date
+    const exactMatch = averagedWeights.find(w => w.date === targetDate)
+
+    if (exactMatch) {
+      chartData.push({
+        date: format(new Date(exactMatch.date), dateFormat),
+        weight: exactMatch.weight,
+        isAveraged: exactMatch.isAveraged || false,
+        originalEntries: exactMatch.originalEntries || 1
+      })
+    } else {
+      // Find nearest weight entry (within 3 days)
+      const targetDateTime = new Date(targetDate).getTime()
+      const nearestEntry = averagedWeights
+        .filter(w => Math.abs(new Date(w.date).getTime() - targetDateTime) <= 3 * 24 * 60 * 60 * 1000)
+        .sort((a, b) => Math.abs(new Date(a.date).getTime() - targetDateTime) - Math.abs(new Date(b.date).getTime()))[0]
+
+      if (nearestEntry) {
+        chartData.push({
+          date: format(new Date(targetDate), dateFormat),
+          weight: nearestEntry.weight,
+          isAveraged: nearestEntry.isAveraged || false,
+          originalEntries: nearestEntry.originalEntries || 1
+        })
+      }
+    }
+  }
+
+  return chartData
 }
+
+
 
 /**
  * Gets the most recent weight (averaged if multiple entries on the same day)
@@ -108,5 +158,4 @@ export const calculateWeightChange = (weights) => {
   }
 }
 
-// Import format function from date-fns
-import { format } from 'date-fns'
+
