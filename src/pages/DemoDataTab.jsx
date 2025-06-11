@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Database, Download, Trash2, AlertTriangle } from 'lucide-react'
 import DemoDataControls from '../components/DemoDataControls'
-import { hasDemoData, clearAllData } from '../utils/generateFakeData'
+import { dataService } from '../services/dataService'
 
 const DemoDataTab = () => {
   const [weights, setWeights] = useState([])
@@ -13,12 +13,18 @@ const DemoDataTab = () => {
     loadData()
   }, [])
 
-  const loadData = () => {
-    const savedWeights = JSON.parse(localStorage.getItem('healthTracker_weight') || '[]')
-    const savedGoal = localStorage.getItem('healthTracker_weightGoal') || ''
-    setWeights(savedWeights)
-    setGoal(savedGoal)
-    setDemoExists(hasDemoData())
+  const loadData = async () => {
+    try {
+      const [savedWeights, savedGoal] = await Promise.all([
+        dataService.loadWeights(),
+        dataService.loadGoal()
+      ])
+      setWeights(savedWeights)
+      setGoal(savedGoal)
+      setDemoExists(await dataService.hasDemoData())
+    } catch (error) {
+      console.error('Error loading data:', error)
+    }
   }
 
   const handleDataChange = () => {
@@ -26,10 +32,10 @@ const DemoDataTab = () => {
     loadData()
   }
 
-  const handleClearAll = () => {
+  const handleClearAll = async () => {
     if (window.confirm('⚠️ This will delete ALL data (including your manual entries). Are you sure?')) {
-      clearAllData()
-      loadData()
+      await dataService.clearAllData()
+      await loadData()
     }
   }
 

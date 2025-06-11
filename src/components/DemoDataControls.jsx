@@ -6,36 +6,39 @@
 // ============================================================================
 
 import { Database, Trash2, AlertTriangle } from 'lucide-react'
-import { loadFakeData, clearFakeData, clearAllData, hasDemoData } from '../utils/generateFakeData'
 import { useState, useEffect } from 'react'
+import { dataService } from '../services/dataService'
 
 const DemoDataControls = ({ onDataChange, showAsCard = false, showAdvanced = false }) => {
   const [demoExists, setDemoExists] = useState(false)
 
   useEffect(() => {
-    setDemoExists(hasDemoData())
+    const checkDemoData = async () => {
+      setDemoExists(await dataService.hasDemoData())
+    }
+    checkDemoData()
   }, [])
 
-  const handleLoadDemo = () => {
-    const result = loadFakeData()
-    setDemoExists(hasDemoData())
+  const handleLoadDemo = async () => {
+    const result = await dataService.loadDemoData()
+    setDemoExists(await dataService.hasDemoData())
     if (onDataChange) onDataChange()
 
     // Show message if demo data already existed
-    if (result.weightData.filter(w => w.isDemoData).length === 0) {
-      alert('ℹ️ Demo data already exists. Use "Clear Demo Data" first if you want to reload.')
+    if (!result.success) {
+      alert(`ℹ️ ${result.message}`)
     }
   }
 
-  const handleClearDemo = () => {
-    clearFakeData()
-    setDemoExists(hasDemoData())
+  const handleClearDemo = async () => {
+    await dataService.clearDemoData()
+    setDemoExists(await dataService.hasDemoData())
     if (onDataChange) onDataChange()
   }
 
-  const handleClearAll = () => {
+  const handleClearAll = async () => {
     if (window.confirm('⚠️ This will delete ALL your data (demo + manual entries). Are you sure?')) {
-      clearAllData()
+      await dataService.clearAllData()
       setDemoExists(false)
       if (onDataChange) onDataChange()
     }

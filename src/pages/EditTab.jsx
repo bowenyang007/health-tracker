@@ -2,34 +2,65 @@ import { useState, useEffect } from 'react'
 import { Trash2, TrendingUp, TrendingDown } from 'lucide-react'
 import { format } from 'date-fns'
 import { averageWeightsByDay, calculateWeightChange } from '../utils/dataProcessing'
+import { dataService } from '../services/dataService'
 
 const EditTab = () => {
   const [weights, setWeights] = useState([])
   const [goal, setGoal] = useState('')
   const [showAllEntries, setShowAllEntries] = useState(false) // Toggle between daily average and all entries
+  const [selectedDate, setSelectedDate] = useState(null) // For drilling down into a specific date
 
-  // Load data from localStorage
+  // Load data using data service
   useEffect(() => {
-    const savedWeights = JSON.parse(localStorage.getItem('healthTracker_weight') || '[]')
-    const savedGoal = localStorage.getItem('healthTracker_weightGoal') || ''
-    setWeights(savedWeights)
-    setGoal(savedGoal)
+    const loadData = async () => {
+      try {
+        const [savedWeights, savedGoal] = await Promise.all([
+          dataService.loadWeights(),
+          dataService.loadGoal()
+        ])
+        setWeights(savedWeights)
+        setGoal(savedGoal)
+      } catch (error) {
+        console.error('Error loading data:', error)
+      }
+    }
+    
+    loadData()
   }, [])
 
-  // Save to localStorage
-  const saveWeights = (newWeights) => {
-    localStorage.setItem('healthTracker_weight', JSON.stringify(newWeights))
-    setWeights(newWeights)
+  const saveGoal = async (newGoal) => {
+    try {
+      await dataService.saveGoal(newGoal)
+      setGoal(newGoal)
+    } catch (error) {
+      console.error('Error saving goal:', error)
+    }
   }
 
-  const saveGoal = (newGoal) => {
-    localStorage.setItem('healthTracker_weightGoal', newGoal)
-    setGoal(newGoal)
+  const deleteWeight = async (id) => {
+    try {
+      const updatedWeights = await dataService.deleteWeight(id)
+      setWeights(updatedWeights)
+    } catch (error) {
+      console.error('Error deleting weight:', error)
+    }
   }
 
-  const deleteWeight = (id) => {
-    const updatedWeights = weights.filter(weight => weight.id !== id)
-    saveWeights(updatedWeights)
+  const handleDailyEntryClick = (date, hasMultipleEntries) => {
+    if (hasMultipleEntries) {
+      // Drill down to show individual entries for this date
+      setSelectedDate(selectedDate === date ? null : date)
+    } else {
+      // Single entry - find and delete it
+      const entryToDelete = weights.find(w => w.date === date)
+      if (entryToDelete && window.confirm(`⚠️ Delete weight entry for ${format(new Date(date), 'MMM dd, yyyy')}?\n\nWeight: ${entryToDelete.weight} lbs\nThis action cannot be undone.`)) {
+        deleteWeight(entryToDelete.id)
+      }
+    }
+  }
+
+  const getEntriesForDate = (date) => {
+    return weights.filter(w => w.date === date).sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
   }
 
 
@@ -113,37 +144,24 @@ const EditTab = () => {
             </p>
           ) : (
             (() => {
-              const entriesToShow = showAllEntries
-                ? [...weights].reverse() // Show all entries, newest first
-                : [...averageWeightsByDay(weights)].reverse() // Show daily averages, newest first
-
-              return entriesToShow.map((weight) => (
-                <div key={weight.id} style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  padding: '0.75rem 0',
-                  borderBottom: '1px solid #e2e8f0'
-                }}>
-                  <div>
-                    <div style={{ fontWeight: '600' }}>
-                      {weight.weight} lbs
-                      {weight.isAveraged && (
-                        <span style={{
-                          fontSize: '0.75rem',
-                          color: '#3b82f6',
-                          marginLeft: '0.5rem',
-                          fontWeight: '400'
-                        }}>
-                          (avg of {weight.originalEntries})
-                        </span>
-                      )}
+              if (showAllEntries) {
+                // Show all individual entries with time, newest first
+                return [...weights].reverse().map((weight) => (
+                  <div key={weight.id} style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    padding: '0.75rem 0',
+                    borderBottom: '1px solid #e2e8f0'
+                  }}>
+                    <div>
+                      <div style={{ fontWeight: '600' }}>
+                        {weight.weight} lbs
+                      </div>
+                      <div style={{ fontSize: '0.875rem', color: '#64748b' }}>
+                        {format(new Date(weight.timestamp), 'MMM dd, yyyy')} at {format(new Date(weight.timestamp), 'h:mm a')}
+                      </div>
                     </div>
-                    <div style={{ fontSize: '0.875rem', color: '#64748b' }}>
-                      {format(new Date(weight.date), 'MMM dd, yyyy')}
-                    </div>
-                  </div>
-                  {showAllEntries && (
                     <button
                       onClick={() => deleteWeight(weight.id)}
                       className="btn btn-danger"
@@ -158,9 +176,132 @@ const EditTab = () => {
                     >
                       <Trash2 size={16} />
                     </button>
-                  )}
-                </div>
-              ))
+                  </div>
+                ))
+              } else {
+                // Show daily list with delete/drill-down functionality
+                const dailyEntries = [...averageWeightsByDay(weights)].reverse()
+                
+                return (
+                  <>
+                    {dailyEntries.map((weight) => {
+                      const hasMultipleEntries = weight.isAveraged
+                      const isExpanded = selectedDate === weight.date
+                      
+                      return (
+                        <div key={weight.date}>
+                          {/* Daily entry row */}
+                          <div style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            padding: '0.75rem 0',
+                            borderBottom: '1px solid #e2e8f0',
+                            cursor: 'pointer',
+                            backgroundColor: isExpanded ? '#f8fafc' : 'transparent'
+                          }}
+                          onClick={() => handleDailyEntryClick(weight.date, hasMultipleEntries)}
+                          >
+                                                         <div>
+                               <div style={{ fontWeight: '600' }}>
+                                 {weight.weight} lbs
+                                 {weight.isAveraged && (
+                                   <span style={{
+                                     fontSize: '0.75rem',
+                                     color: '#3b82f6',
+                                     marginLeft: '0.5rem',
+                                     fontWeight: '400'
+                                   }}>
+                                     (avg of {weight.originalEntries})
+                                   </span>
+                                 )}
+                               </div>
+                               <div style={{ fontSize: '0.875rem', color: '#64748b' }}>
+                                 {format(new Date(weight.date), 'MMM dd, yyyy')}
+                                 {weight.isAveraged ? (
+                                   // For averaged entries, show time range of all entries for that date
+                                   (() => {
+                                     const dayEntries = getEntriesForDate(weight.date)
+                                     const times = dayEntries.map(entry => format(new Date(entry.timestamp), 'h:mm a'))
+                                     const earliestTime = times[times.length - 1] // entries are sorted newest first
+                                     const latestTime = times[0]
+                                     return earliestTime === latestTime 
+                                       ? ` at ${latestTime}`
+                                       : ` (${earliestTime} - ${latestTime})`
+                                   })()
+                                 ) : (
+                                   // For single entries, show the actual time
+                                   ` at ${format(new Date(weight.timestamp), 'h:mm a')}`
+                                 )}
+                               </div>
+                             </div>
+                            <button
+                              className={`btn ${hasMultipleEntries ? 'btn-secondary' : 'btn-danger'}`}
+                              style={{
+                                padding: '0.5rem',
+                                minWidth: 'auto',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center'
+                              }}
+                              title={hasMultipleEntries ? 'View entries' : 'Delete entry'}
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                handleDailyEntryClick(weight.date, hasMultipleEntries)
+                              }}
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          </div>
+                          
+                          {/* Expanded individual entries */}
+                          {isExpanded && (
+                            <div style={{ marginLeft: '1rem', backgroundColor: '#f8fafc' }}>
+                              {getEntriesForDate(weight.date).map((entry) => (
+                                <div key={entry.id} style={{
+                                  display: 'flex',
+                                  justifyContent: 'space-between',
+                                  alignItems: 'center',
+                                  padding: '0.5rem 0',
+                                  borderBottom: '1px solid #e2e8f0'
+                                }}>
+                                  <div>
+                                    <div style={{ fontWeight: '500', fontSize: '0.9rem' }}>
+                                      {entry.weight} lbs
+                                    </div>
+                                    <div style={{ fontSize: '0.8rem', color: '#64748b' }}>
+                                      {format(new Date(entry.timestamp), 'h:mm a')}
+                                    </div>
+                                  </div>
+                                  <button
+                                    onClick={() => {
+                                      if (window.confirm(`⚠️ Delete weight entry?\n\nWeight: ${entry.weight} lbs\nTime: ${format(new Date(entry.timestamp), 'h:mm a')}\nThis action cannot be undone.`)) {
+                                        deleteWeight(entry.id)
+                                      }
+                                    }}
+                                    className="btn btn-danger"
+                                    style={{
+                                      padding: '0.25rem',
+                                      minWidth: 'auto',
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'center',
+                                      fontSize: '0.8rem'
+                                    }}
+                                    title="Delete entry"
+                                  >
+                                    <Trash2 size={12} />
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )
+                    })}
+                  </>
+                )
+              }
             })()
           )}
         </div>

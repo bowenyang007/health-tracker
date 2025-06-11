@@ -3,47 +3,74 @@ import { Plus } from 'lucide-react'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import { format } from 'date-fns'
 import { prepareChartData } from '../utils/dataProcessing'
+import { dataService } from '../services/dataService'
 
 const Dashboard = () => {
   const [weights, setWeights] = useState([])
   const [newWeight, setNewWeight] = useState('')
   const [newDate, setNewDate] = useState(format(new Date(), 'yyyy-MM-dd'))
   const [goal, setGoal] = useState('')
-  const [chartPeriod, setChartPeriod] = useState(30) // 7, 30, or 90 days
+  const [chartPeriod, setChartPeriod] = useState(7) // 7, 30, or 90 days
 
-  // Load data from localStorage
+  // Load data using data service
   useEffect(() => {
-    const savedWeights = JSON.parse(localStorage.getItem('healthTracker_weight') || '[]')
-    const savedGoal = localStorage.getItem('healthTracker_weightGoal') || ''
-    setWeights(savedWeights)
-    setGoal(savedGoal)
+    const loadData = async () => {
+      try {
+        const [savedWeights, savedGoal] = await Promise.all([
+          dataService.loadWeights(),
+          dataService.loadGoal()
+        ])
+        
+        setWeights(savedWeights)
+        setGoal(savedGoal)
+        
+        // Set default weight to last entered weight
+        if (savedWeights.length > 0) {
+          const lastWeight = savedWeights[savedWeights.length - 1]
+          setNewWeight(lastWeight.weight.toString())
+        }
+      } catch (error) {
+        console.error('Error loading data:', error)
+      }
+    }
+    
+    loadData()
   }, [])
 
-  // Save to localStorage
-  const saveWeights = (newWeights) => {
-    localStorage.setItem('healthTracker_weight', JSON.stringify(newWeights))
-    setWeights(newWeights)
-  }
-
-  const addWeight = (e) => {
+  const addWeight = async (e) => {
     e.preventDefault()
     if (!newWeight || !newDate) return
 
-    // Create timestamp using just the date (set to noon to avoid timezone issues)
-    const dateTimeString = `${newDate}T12:00:00`
-    const timestamp = new Date(dateTimeString).toISOString()
+    try {
+      // Create timestamp using the selected date but current time
+      const now = new Date()
+      const selectedDate = new Date(newDate)
+      
+      // Use selected date but current time
+      const timestamp = new Date(
+        selectedDate.getFullYear(),
+        selectedDate.getMonth(),
+        selectedDate.getDate(),
+        now.getHours(),
+        now.getMinutes(),
+        now.getSeconds()
+      ).toISOString()
 
-    const weightEntry = {
-      id: Date.now(),
-      weight: parseFloat(newWeight),
-      date: newDate,
-      timestamp: timestamp
+      const weightEntry = {
+        id: Date.now(),
+        weight: parseFloat(newWeight),
+        date: newDate,
+        timestamp: timestamp
+      }
+
+      const updatedWeights = await dataService.addWeight(weightEntry)
+      setWeights(updatedWeights)
+      setNewWeight(newWeight) // Keep the same weight as default for next entry
+      setNewDate(format(new Date(), 'yyyy-MM-dd'))
+    } catch (error) {
+      console.error('Error adding weight:', error)
+      // Could show user-friendly error message here
     }
-
-    const updatedWeights = [...weights, weightEntry].sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp))
-    saveWeights(updatedWeights)
-    setNewWeight('')
-    setNewDate(format(new Date(), 'yyyy-MM-dd'))
   }
 
   // Prepare chart data based on selected period (with daily averaging)
@@ -87,7 +114,6 @@ const Dashboard = () => {
     <div>
       <div className="page-header">
         <h1 className="page-title">Health Tracker</h1>
-        <p className="page-subtitle">Track your weight progress</p>
       </div>
 
       <div className="grid grid-2">
@@ -130,7 +156,6 @@ const Dashboard = () => {
         {weights.length > 0 && (
           <div className="card">
             <div className="card-header" style={{ marginBottom: '1rem' }}>
-              <h3 className="card-title" style={{ marginBottom: '1rem' }}>Weight Progress</h3>
               <div style={{
                 display: 'flex',
                 gap: '0.5rem',
