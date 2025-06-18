@@ -1,0 +1,62 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+---
+description: Comprehensive guidline for building a dapp on Aptos.
+globs: **/*
+alwaysApply: true
+---
+
+# Build a dapp on Aptos
+
+This document provides a detailed guidline for building a dapp on Aptos.
+
+---
+
+### 1. Project folder structure
+
+* Prefer using a known framework setup like `npm create vite` or `npx create-next-app`.
+  * Always use `React` for the front end 
+  * Prefer use `TypeScript`
+* In the root folder, generate the project setup based on the chosen framework.
+* Rename the `src` folder in the project folder to `frontend`, and make sure to modify all relevante references.
+* Use the `frontend` folder as the place to hold all of the project frontend code.
+
+### 2. Create the smart contract
+
+* Create a `contract` folder in the project folder.
+* Use the `contract` folder as the place to hold all of the project Move contract code.
+* Generate the relevant Move smart contract files in the `contract` folder, such as the `Move.toml` file, sources folder.
+* Implement any relevant smart contract code.
+
+### 3. Install Required Dependencies
+
+* Install the required aptos packages like `@aptos-labs/ts-sdk`, `@aptos-labs/wallet-adapter-react`.
+* Always use the latest stable versions of packages.
+* Install other dependencies if required.
+
+### 4. Setup Wallet Connector
+
+**MCP Resources:** `wallet_provider`, `connect_wallet_dialog`, `wallet_row`
+
+* Use the `wallet_provider` resource to setup the Wallet Adapter Provider.
+* Use the `connect_wallet_dialog` resource to setup the Wallet Selector modal to show all wallets.
+* Use the `wallet_row` resource to setup the Wallet connection where users can connect their wallet with the dapp.
+
+**Important:** Always use the latest code implementation
+
+
+### 5. Reference Implementation Examples
+
+If you need working examples of Aptos DApp structure and implementation, refer to the an Aptos DApp examples repository:
+
+👉 https://github.com/aptos-labs/create-aptos-dapp/tree/main/templates
+
+This repo includes:
+- Project folder structure
+- Project setup using `vite` or `nextjs`
+- Wallet connect flow using `@aptos-labs/wallet-adapter-react`
+- Transaction sending examples
+- Network setup using `@aptos-labs/ts-sdk`
