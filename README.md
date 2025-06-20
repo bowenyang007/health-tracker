@@ -1,50 +1,65 @@
-# Health Tracker
+# Health Tracker Aptos DApp
 
-A modern, responsive web application for tracking weight progress with interactive charts and data visualization.
+A decentralized health tracking application built on the Aptos blockchain. Track your weight measurements on-chain with privacy and data ownership.
 
-## ✨ Features
+## 🏗️ Project Structure
 
-### 📊 Weight Tracking
-- **Add weight entries** with date
-- **Set goal weight** as a one-time setting
-- **Multiple entries per day** automatically averaged
-- **Individual entry management** with granular deletion
+This project follows the Aptos DApp architecture:
 
-### 📈 Data Visualization
-- **Interactive charts** with 7, 30, and 90-day views
-- **Responsive Y-axis** that scales to your data range
-- **Daily averaging** for clean chart visualization
-- **Detailed tooltips** showing entry information
+```
+health-tracker/
+├── frontend/              # React frontend application
+│   ├── components/       # React components
+│   ├── pages/           # Main pages (Dashboard, EditTab, etc.)
+│   ├── services/        # Data services (localStorage & Aptos)
+│   ├── utils/           # Utility functions
+│   └── main.jsx         # React entry point
+├── contract/            # Move smart contracts
+│   ├── sources/         # Move source files
+│   │   └── health_tracker.move
+│   ├── Move.toml        # Move package configuration
+│   └── README.md        # Contract documentation
+├── public/              # Static assets
+└── package.json         # Node.js dependencies
+```
 
-### � Data Management
-- **Demo data** with realistic 90-day weight loss journey
-- **Data export** to JSON for backup and portability
-- **Safe demo data removal** (preserves manual entries)
-- **Complete data overview** with entry statistics
+## 🚀 Features
 
-### �📱 Mobile-Friendly Design
-- **Responsive layout** that works on all devices
-- **Touch-friendly** buttons and form inputs
-- **Optimized navigation** with collapsible sidebar
-- **Clean, modern UI** with professional styling
+### Frontend Features
+- **Modern React UI**: Built with Vite and React 19
+- **Weight Tracking**: Add, edit, and remove weight entries
+- **Data Visualization**: Interactive charts powered by Recharts
+- **Time-based History**: View weight entries with timestamps
+- **Demo Data**: Generate sample data for testing
+- **Responsive Design**: Works on desktop and mobile
 
-### 🎯 Demo Data
-- **90-day weight loss journey** demo data (195→170 lbs)
-- **Realistic daily entries** with natural fluctuations
-- **Safe demo management** - preserves your real data
-- **Easy removal** when no longer needed
+### Blockchain Features
+- **Decentralized Storage**: Weight data stored on Aptos blockchain
+- **Data Ownership**: Users fully own their health data
+- **Privacy**: Data only accessible to the user
+- **Timestamp Integrity**: Automatic blockchain timestamps
+- **Gas Efficient**: Optimized Move smart contract
 
-## 🚀 Getting Started
+## 🛠️ Technology Stack
 
-### Prerequisites
-- Node.js 18+
-- npm or yarn
+### Frontend
+- **React 19** - Modern React with latest features
+- **Vite** - Fast build tool and dev server
+- **Recharts** - Data visualization library
+- **Lucide React** - Icon library
+- **date-fns** - Date manipulation utilities
 
-### Installation
+### Blockchain
+- **Aptos Blockchain** - Layer 1 blockchain for smart contracts
+- **Move Language** - Safe and efficient smart contract language
+- **Aptos TypeScript SDK** - Client library for Aptos interaction
+- **Wallet Adapter** - Multi-wallet connection support
+
+## 📦 Installation
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/YOUR_USERNAME/health-tracker.git
+   git clone <repository-url>
    cd health-tracker
    ```
 
@@ -63,90 +78,148 @@ A modern, responsive web application for tracking weight progress with interacti
    http://localhost:5173
    ```
 
-## 🛠️ Built With
+## 🔗 Smart Contract Integration
 
-- **React 18** - UI framework
-- **Vite** - Build tool and dev server
-- **Recharts** - Chart library for data visualization
-- **date-fns** - Date manipulation and formatting
-- **Lucide React** - Modern icon library
-- **CSS3** - Custom styling with responsive design
+### Contract Deployment
 
-## 📊 Usage
+1. **Install Aptos CLI**
+   ```bash
+   # macOS
+   brew install aptos
+   
+   # Or download from: https://github.com/aptos-labs/aptos-core/releases
+   ```
 
-### Adding Weight Entries
-1. Use the **Dashboard** tab
-2. Enter your weight and date
-3. Click **Add Weight**
+2. **Initialize Aptos account**
+   ```bash
+   aptos init
+   ```
 
-### Viewing Progress
-- **Dashboard** shows weight logging form and progress chart
-- **Edit** tab shows recent entries, stats, and goal weight settings
-- **Demo Data** tab for managing demo data and exporting information
-- Toggle between **7, 30, and 90-day** chart views on Dashboard
+3. **Compile and deploy contract**
+   ```bash
+   cd contract
+   aptos move compile
+   aptos move publish
+   ```
 
-### Managing Data
-- **Edit tab** for managing entries and goal weight settings
-- **Demo Data tab** for demo data management and data export
-- **Show All** / **Show Daily Avg** toggle in Recent Entries
-- **Delete individual entries** in "Show All" mode
-- **Set goal weight** in Edit tab settings
-- **Load demo data** to see how the app works
-- **Clear demo data** safely (preserves manual entries)
-- **Export all data** as JSON for backup
+4. **Update frontend with contract address**
+   ```javascript
+   // In your frontend code
+   import { aptosService } from './frontend/services/aptosService.js';
+   aptosService.setContractAddress('YOUR_CONTRACT_ADDRESS');
+   ```
 
-## 🗂️ Project Structure
+### Smart Contract Functions
 
+The health tracker smart contract provides:
+
+- **`initialize()`** - Set up health tracking for a user
+- **`add_weight(weight_kg)`** - Add a weight entry with timestamp
+- **`remove_weight(index)`** - Remove entry by index
+- **`remove_latest_weight()`** - Remove most recent entry
+- **`get_weight_entries(address)`** - View all entries (no gas)
+- **`get_latest_weight(address)`** - View latest entry (no gas)
+
+See `contract/README.md` for detailed API documentation.
+
+## 🔧 Configuration
+
+### Network Configuration
+
+By default, the app connects to Aptos testnet. To change networks:
+
+```javascript
+// frontend/services/aptosService.js
+const aptosConfig = new AptosConfig({ 
+  network: Network.MAINNET  // or Network.DEVNET
+});
 ```
-src/
-├── components/          # Reusable UI components
-│   └── DemoDataControls.jsx  # Demo data management
-├── pages/              # Main application pages
-│   ├── Dashboard.jsx   # Weight logging and progress chart
-│   ├── EditTab.jsx     # Entry management and settings
-│   └── DemoDataTab.jsx # Demo data management and export
-├── utils/              # Utility functions
-│   ├── dataProcessing.js   # Data averaging and processing
-│   └── generateFakeData.js # Demo data generation
-└── styles/             # CSS styling
-    └── App.css         # Main application styles
+
+### Wallet Integration
+
+The app supports multiple Aptos wallets through the wallet adapter:
+- Petra Wallet
+- Martian Wallet  
+- Fewcha Wallet
+- And more...
+
+## 🧪 Demo Data
+
+The application includes demo data generation for testing:
+- Generate realistic weight progression data
+- Configurable date ranges and trends
+- Perfect for development and demos
+
+## 📱 Usage
+
+### Basic Usage (Local Storage)
+1. Open the application
+2. Add weight entries using the input form
+3. View progress in the dashboard chart
+4. Edit history in the "History" tab
+
+### Blockchain Usage (Coming Soon)
+1. Connect your Aptos wallet
+2. Initialize your health data on-chain
+3. Add weight entries (requires small gas fee)
+4. View your data from any device with your wallet
+
+## 🏃‍♂️ Development
+
+### Project Scripts
+```bash
+npm run dev      # Start development server
+npm run build    # Build for production
+npm run preview  # Preview production build
+npm run lint     # Run ESLint
 ```
 
-## 🎯 Data Management
+### Adding New Features
+1. Frontend components go in `frontend/components/`
+2. New pages go in `frontend/pages/`
+3. Smart contract functions go in `contract/sources/`
+4. Update services in `frontend/services/`
 
-### Local Storage
-- All data stored in browser's localStorage
-- Automatic saving and loading
-- No external dependencies required
+## 🔒 Privacy & Security
 
-### Data Processing
-- **Daily averaging** for multiple entries per day
-- **Timestamp preservation** for all entries
-- **Smart sorting** by date and time
-- **Safe deletion** with individual entry control
-
-## 🧹 Removing Demo Data
-
-When ready to use only your real data:
-
-1. **Safe removal**: Use "Clear Demo Data Only" button
-2. **Complete removal**: Delete demo-related files (see `DEMO_DATA_REMOVAL.md`)
+- **Data Ownership**: Your health data belongs to you
+- **On-chain Storage**: Data stored on decentralized blockchain
+- **Wallet Security**: Private keys never leave your device
+- **View Functions**: Read data without gas fees
 
 ## 🤝 Contributing
 
 1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+2. Create a feature branch
+3. Make your changes
+4. Test thoroughly (both frontend and contracts)
+5. Submit a pull request
 
-## 📝 License
+## 📜 License
 
-This project is open source and available under the [MIT License](LICENSE).
+MIT License - see LICENSE file for details
 
-## 🎉 Acknowledgments
+## 🆘 Support
 
-- Built with modern React best practices
-- Responsive design principles
-- Clean, maintainable code structure
-- User-focused feature development
+For support and questions:
+- Check the contract documentation in `contract/README.md`
+- Review the data service documentation in `frontend/services/README.md`
+- Open an issue on GitHub
+
+## 🗺️ Roadmap
+
+- [x] React frontend with weight tracking
+- [x] Data visualization and history
+- [x] Local storage data service
+- [x] Move smart contract development
+- [x] Aptos service integration layer
+- [ ] Wallet connection UI
+- [ ] Smart contract deployment
+- [ ] Blockchain data synchronization
+- [ ] Multi-device data sync
+- [ ] Enhanced privacy features
+- [ ] Mobile app development
+
+---
+
+Built with ❤️ on the Aptos blockchain
