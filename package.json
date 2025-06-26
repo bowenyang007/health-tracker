@@ -10,6 +10,9 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@aptos-labs/ts-sdk": "^1.39.0",
+    "@aptos-labs/wallet-adapter-ant-design": "^4.1.0",
+    "@aptos-labs/wallet-adapter-react": "^6.1.2",
     "date-fns": "^4.1.0",
     "lucide-react": "^0.514.0",
     "react": "^19.1.0",
