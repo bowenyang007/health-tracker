@@ -76,8 +76,18 @@ const AdminTab = () => {
 
   return (
     <div>
-      <div className="page-header">
+      <div className="page-header" style={{ position: 'relative' }}>
         <h1 className="page-title">Settings</h1>
+        <div style={{ 
+          position: 'absolute', 
+          top: '0', 
+          right: '0', 
+          fontSize: '0.75rem', 
+          color: '#9ca3af',
+          fontFamily: 'monospace'
+        }}>
+          v1.0.1
+        </div>
       </div>
 
       <div className="card" style={{ padding: 0 }}>

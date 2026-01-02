@@ -57,6 +57,30 @@ export const DailyEntryRow = ({
 }) => {
   const hasMultipleEntries = weight.isAveraged
 
+  const handleButtonClick = (e) => {
+    e.preventDefault()
+    e.stopPropagation()
+    
+    if (hasMultipleEntries) {
+      // For multiple entries, toggle expansion
+      onClick()
+    } else {
+      // For single entry, delete it
+      const dateStr = format(new Date(weight.timestamp), DATE_FORMATS.ISO)
+      const entries = getEntriesForDate(dateStr)
+      if (entries.length > 0) {
+        const entry = entries[0]
+        if (window.confirm(
+          `⚠️ Delete weight entry for ${format(new Date(entry.timestamp), DATE_FORMATS.FULL)}?\n\n` +
+          `Weight: ${entry.weight} lbs\n` +
+          `This action cannot be undone.`
+        )) {
+          onDelete(entry.id)
+        }
+      }
+    }
+  }
+
   return (
     <div>
       {/* Daily entry row */}
@@ -64,7 +88,10 @@ export const DailyEntryRow = ({
         className={`entry-row ${isExpanded ? 'expanded' : ''}`}
         style={{ cursor: hasMultipleEntries ? 'pointer' : 'default' }}
       >
-        <div onClick={hasMultipleEntries ? onClick : undefined}>
+        <div 
+          onClick={hasMultipleEntries ? onClick : undefined}
+          style={{ flex: 1, cursor: hasMultipleEntries ? 'pointer' : 'default' }}
+        >
           <div className="entry-weight">
             {weight.weight} lbs
             {weight.isAveraged && (
@@ -92,12 +119,11 @@ export const DailyEntryRow = ({
           </div>
         </div>
         <button
+          type="button"
           className={`btn btn-icon-only ${hasMultipleEntries ? 'btn-secondary' : 'btn-danger'}`}
           title={hasMultipleEntries ? 'View entries' : 'Delete entry'}
-          onClick={(e) => {
-            e.stopPropagation()
-            onClick()
-          }}
+          onClick={handleButtonClick}
+          disabled={isLoading}
         >
           <Trash2 size={16} />
         </button>
