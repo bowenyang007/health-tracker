@@ -1,11 +1,22 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import './App.css'
 import Dashboard from './pages/Dashboard.jsx'
 import EditTab from './pages/EditTab.jsx'
 import AdminTab from './pages/AdminTab.jsx'
 
+const ACTIVE_TAB_KEY = 'health-tracker-active-tab'
+
 function App() {
-  const [activeTab, setActiveTab] = useState('dashboard')
+  // Load saved tab from localStorage or default to 'dashboard'
+  const [activeTab, setActiveTab] = useState(() => {
+    const savedTab = localStorage.getItem(ACTIVE_TAB_KEY)
+    return savedTab || 'dashboard'
+  })
+
+  // Save active tab to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem(ACTIVE_TAB_KEY, activeTab)
+  }, [activeTab])
 
   return (
     <div className="app">
