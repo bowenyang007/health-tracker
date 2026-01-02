@@ -5,7 +5,7 @@
 // ============================================================================
 
 // Application version - UPDATE THIS ON EVERY DEPLOY
-export const APP_VERSION = '1.0.1'
+export const APP_VERSION = '1.0.2'
 
 // Chart periods
 export const CHART_PERIODS = {
