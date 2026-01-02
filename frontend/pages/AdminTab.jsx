@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { Database, Trash2, Download, Upload } from 'lucide-react'
 import { dataService } from '../services/dataService'
 import { createBackup, restoreBackup } from '../services/backupService'
-import { MESSAGES } from '../utils/constants'
+import { MESSAGES, APP_VERSION } from '../utils/constants'
 
 const AdminTab = () => {
   const [testDataExists, setTestDataExists] = useState(false)
@@ -86,7 +86,7 @@ const AdminTab = () => {
           color: '#9ca3af',
           fontFamily: 'monospace'
         }}>
-          v1.0.1
+          v{APP_VERSION}
         </div>
       </div>
 

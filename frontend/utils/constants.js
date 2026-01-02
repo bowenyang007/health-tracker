@@ -4,6 +4,9 @@
 // Centralized constants to avoid magic numbers and strings throughout the app
 // ============================================================================
 
+// Application version - UPDATE THIS ON EVERY DEPLOY
+export const APP_VERSION = '1.0.1'
+
 // Chart periods
 export const CHART_PERIODS = {
   WEEK: 7,
