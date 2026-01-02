@@ -1,6 +1,6 @@
 {
   "name": "Health Tracker",
-  "short_name": "Health",
+  "short_name": "My Health",
   "description": "Track your weight and health progress",
   "start_url": "/",
   "scope": "/",
