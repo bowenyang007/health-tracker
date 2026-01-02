@@ -220,6 +220,127 @@
   background-color: #cbd5e1;
 }
 
+.btn-danger {
+  background-color: #ef4444;
+  color: white;
+}
+
+.btn-danger:hover {
+  background-color: #dc2626;
+}
+
+.btn-danger:disabled {
+  background-color: #fca5a5;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.btn-icon-only {
+  padding: 0.5rem;
+  min-width: auto;
+}
+
+/* Period button group */
+.period-button-group {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.period-button {
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  min-width: 60px;
+}
+
+/* Settings list items */
+.settings-list-button {
+  width: 100%;
+  padding: 1rem 1.25rem;
+  border: none;
+  border-bottom: 1px solid #e5e7eb;
+  background-color: transparent;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  cursor: pointer;
+  font-size: 1rem;
+  text-align: left;
+  transition: background-color 0.2s;
+}
+
+.settings-list-button:hover:not(:disabled) {
+  background-color: #f9fafb;
+}
+
+.settings-list-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+/* Entry list styles */
+.entry-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.entry-row-expanded {
+  cursor: pointer;
+  background-color: transparent;
+  transition: background-color 0.2s;
+}
+
+.entry-row-expanded:hover {
+  background-color: #f8fafc;
+}
+
+.entry-row-expanded.expanded {
+  background-color: #f8fafc;
+}
+
+.entry-weight {
+  font-weight: 600;
+}
+
+.entry-date {
+  font-size: 0.875rem;
+  color: #64748b;
+}
+
+.entry-badge {
+  font-size: 0.75rem;
+  color: #3b82f6;
+  margin-left: 0.5rem;
+  font-weight: 400;
+}
+
+.nested-entry-list {
+  margin-left: 1rem;
+  background-color: #f8fafc;
+}
+
+.nested-entry-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.nested-entry-weight {
+  font-weight: 500;
+  font-size: 0.9rem;
+}
+
+.nested-entry-time {
+  font-size: 0.8rem;
+  color: #64748b;
+}
+
 .form-group {
   margin-bottom: 1rem;
 }

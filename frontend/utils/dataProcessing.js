@@ -4,8 +4,8 @@
 // Functions for processing weight data, including handling multiple entries per day
 // ============================================================================
 
-// Import format function from date-fns
 import { format, subDays } from 'date-fns'
+import { DATE_FORMATS } from './constants'
 
 /**
  * Groups weight entries by date and averages multiple entries per day
@@ -15,9 +15,9 @@ import { format, subDays } from 'date-fns'
 export const averageWeightsByDay = (weights) => {
   if (!weights || weights.length === 0) return []
 
-  // Group entries by date
+  // Group entries by date (convert timestamp to YYYY-MM-DD)
   const groupedByDate = weights.reduce((groups, entry) => {
-    const date = entry.date
+    const date = format(new Date(entry.timestamp), DATE_FORMATS.ISO)
     if (!groups[date]) {
       groups[date] = []
     }
@@ -49,16 +49,16 @@ export const averageWeightsByDay = (weights) => {
     }
   })
 
-  // Sort by date
-  return averagedWeights.sort((a, b) => new Date(a.date) - new Date(b.date))
+  // Sort by timestamp
+  return averagedWeights.sort((a, b) => a.timestamp - b.timestamp)
 }
 
 /**
- * Prepares chart data with consistent X-axis intervals
+ * Prepares chart data - shows only actual data points
  * @param {Array} weights - Raw weight entries
  * @param {number} days - Number of recent days to include
  * @param {string} dateFormat - Format for chart labels
- * @returns {Array} - Chart-ready data with consistent spacing
+ * @returns {Array} - Chart-ready data with only real entries
  */
 export const prepareChartData = (weights, days, dateFormat = 'MMM dd') => {
   const averagedWeights = averageWeightsByDay(weights)
@@ -69,56 +69,18 @@ export const prepareChartData = (weights, days, dateFormat = 'MMM dd') => {
   const endDate = new Date()
   const startDate = subDays(endDate, days - 1)
 
-  // Determine appropriate interval based on period
-  let interval
-  let maxPoints
-
-  if (days <= 7) {
-    interval = 1 // Daily for 7 days
-    maxPoints = 7
-  } else if (days <= 30) {
-    interval = 2 // Every 2 days for 30 days (15 points)
-    maxPoints = 15
-  } else {
-    interval = 7 // Weekly for 90 days (13 points)
-    maxPoints = 13
-  }
-
-  // Create evenly spaced date points
-  const chartData = []
-  const totalDays = days
-  const step = Math.max(1, Math.floor(totalDays / maxPoints))
-
-  for (let i = 0; i < totalDays; i += step) {
-    const targetDate = format(subDays(endDate, totalDays - 1 - i), 'yyyy-MM-dd')
-
-    // Find the closest weight entry to this date
-    const exactMatch = averagedWeights.find(w => w.date === targetDate)
-
-    if (exactMatch) {
-      chartData.push({
-        date: format(new Date(exactMatch.date), dateFormat),
-        weight: exactMatch.weight,
-        isAveraged: exactMatch.isAveraged || false,
-        originalEntries: exactMatch.originalEntries || 1
-      })
-    } else {
-      // Find nearest weight entry (within 3 days)
-      const targetDateTime = new Date(targetDate).getTime()
-      const nearestEntry = averagedWeights
-        .filter(w => Math.abs(new Date(w.date).getTime() - targetDateTime) <= 3 * 24 * 60 * 60 * 1000)
-        .sort((a, b) => Math.abs(new Date(a.date).getTime() - targetDateTime) - Math.abs(new Date(b.date).getTime()))[0]
-
-      if (nearestEntry) {
-        chartData.push({
-          date: format(new Date(targetDate), dateFormat),
-          weight: nearestEntry.weight,
-          isAveraged: nearestEntry.isAveraged || false,
-          originalEntries: nearestEntry.originalEntries || 1
-        })
-      }
-    }
-  }
+  // Filter weights within the date range and format for chart
+  const chartData = averagedWeights
+    .filter(w => {
+      const entryDate = new Date(w.timestamp)
+      return entryDate >= startDate && entryDate <= endDate
+    })
+    .map(w => ({
+      date: format(new Date(w.timestamp), dateFormat),
+      weight: w.weight,
+      isAveraged: w.isAveraged || false,
+      originalEntries: w.originalEntries || 1
+    }))
 
   return chartData
 }

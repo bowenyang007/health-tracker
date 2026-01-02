@@ -7,6 +7,7 @@
 // ============================================================================
 
 import { format, subDays } from 'date-fns'
+import { STORAGE_KEYS, DEMO_DATA_CONFIG, DATE_FORMATS } from '../utils/constants'
 
 /**
  * Data service interface for weight tracking data
@@ -25,7 +26,7 @@ class DataService {
   async loadWeights() {
     try {
       if (this.storageType === 'localStorage') {
-        const data = localStorage.getItem('healthTracker_weight')
+        const data = localStorage.getItem(STORAGE_KEYS.WEIGHTS)
         return JSON.parse(data || '[]')
       }
       // Future database implementation would go here
@@ -44,7 +45,7 @@ class DataService {
   async saveWeights(weights) {
     try {
       if (this.storageType === 'localStorage') {
-        localStorage.setItem('healthTracker_weight', JSON.stringify(weights))
+        localStorage.setItem(STORAGE_KEYS.WEIGHTS, JSON.stringify(weights))
         return true
       }
       // Future database implementation would go here
@@ -98,7 +99,7 @@ class DataService {
   async loadGoal() {
     try {
       if (this.storageType === 'localStorage') {
-        return localStorage.getItem('healthTracker_weightGoal') || ''
+        return localStorage.getItem(STORAGE_KEYS.GOAL) || ''
       }
       // Future database implementation would go here
       // return await this.databaseClient.getGoal()
@@ -116,7 +117,7 @@ class DataService {
   async saveGoal(goal) {
     try {
       if (this.storageType === 'localStorage') {
-        localStorage.setItem('healthTracker_weightGoal', goal)
+        localStorage.setItem(STORAGE_KEYS.GOAL, goal)
         return true
       }
       // Future database implementation would go here
@@ -136,9 +137,9 @@ class DataService {
       console.log('💥 CLEARING ALL DATA (demo + manual)...')
       
       if (this.storageType === 'localStorage') {
-        localStorage.removeItem('healthTracker_weight')
-        localStorage.removeItem('healthTracker_weightGoal')
-        localStorage.removeItem('healthTracker_isDemoGoal')
+        localStorage.removeItem(STORAGE_KEYS.WEIGHTS)
+        localStorage.removeItem(STORAGE_KEYS.GOAL)
+        localStorage.removeItem(STORAGE_KEYS.IS_DEMO_GOAL)
       }
       // Future database implementation would go here
       // await this.databaseClient.clearAllData()
@@ -177,25 +178,23 @@ class DataService {
     console.log('🎯 Generating 90-day daily weight loss demo data...')
 
     const data = []
-    const startWeight = 195
-    const endWeight = 170
-    const totalDays = 90
-    const totalWeightLoss = startWeight - endWeight // 25 lbs
+    const { START_WEIGHT, END_WEIGHT, TOTAL_DAYS, SKIP_PROBABILITY, MORNING_PROBABILITY, DAILY_FLUCTUATION, WEEKEND_EFFECT } = DEMO_DATA_CONFIG
+    const totalWeightLoss = START_WEIGHT - END_WEIGHT // 25 lbs
 
     // Create realistic daily weight loss with fluctuations
-    for (let day = 0; day <= totalDays; day++) {
-      const date = format(subDays(new Date(), totalDays - day), 'yyyy-MM-dd')
+    for (let day = 0; day <= TOTAL_DAYS; day++) {
+      const date = format(subDays(new Date(), TOTAL_DAYS - day), DATE_FORMATS.ISO)
 
       // Base weight loss progression (not linear, faster at start)
-      const progressRatio = day / totalDays
-      const baseWeight = startWeight - (totalWeightLoss * Math.pow(progressRatio, 0.7))
+      const progressRatio = day / TOTAL_DAYS
+      const baseWeight = START_WEIGHT - (totalWeightLoss * Math.pow(progressRatio, 0.7))
 
       // Add realistic daily fluctuations
-      const fluctuation = (Math.random() - 0.5) * 2.5 // ±1.25 lbs daily variation
+      const fluctuation = (Math.random() - 0.5) * DAILY_FLUCTUATION // ±1.25 lbs daily variation
 
       // Add weekly patterns (slightly higher on weekends)
-      const dayOfWeek = (totalDays - day) % 7
-      const weekendEffect = (dayOfWeek === 0 || dayOfWeek === 6) ? 0.3 : 0
+      const dayOfWeek = (TOTAL_DAYS - day) % 7
+      const weekendEffect = (dayOfWeek === 0 || dayOfWeek === 6) ? WEEKEND_EFFECT : 0
 
       // Add some plateaus and whooshes (common in weight loss)
       let plateauEffect = 0
@@ -210,31 +209,32 @@ class DataService {
       const finalWeight = Math.round((baseWeight + fluctuation + weekendEffect + plateauEffect) * 10) / 10
 
       // Skip some days randomly to make it more realistic (people don't weigh daily)
-      const shouldInclude = day === 0 || day === totalDays || Math.random() > 0.25 // Skip ~25% of days
+      const shouldInclude = day === 0 || day === TOTAL_DAYS || Math.random() > SKIP_PROBABILITY
 
       if (shouldInclude) {
         // Generate realistic weigh-in times (mostly morning, some evening)
-        const isMorning = Math.random() > 0.3 // 70% morning weigh-ins
+        const isMorning = Math.random() > (1 - MORNING_PROBABILITY)
         const hour = isMorning
           ? Math.floor(Math.random() * 3) + 6  // 6-8 AM
           : Math.floor(Math.random() * 3) + 19 // 7-9 PM
         const minute = Math.floor(Math.random() * 60)
-        const time = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`
+        const second = Math.floor(Math.random() * 60)
 
-        const timestamp = new Date(`${date}T${time}:00`).toISOString()
+        // Create date object and get Unix timestamp
+        const dateObj = subDays(new Date(), TOTAL_DAYS - day)
+        dateObj.setHours(hour, minute, second, 0)
+        const timestamp = dateObj.getTime()
 
         data.push({
-          id: Date.now() + day,
-          weight: Math.max(finalWeight, endWeight - 2), // Don't go below target
-          date: date,
-          time: time,
+          id: timestamp + Math.floor(Math.random() * 1000), // Ensure unique IDs
+          weight: Math.max(finalWeight, END_WEIGHT - 2), // Don't go below target
           timestamp: timestamp,
           isDemoData: true // Mark as demo data
         })
       }
     }
 
-    const sortedData = data.sort((a, b) => new Date(a.date) - new Date(b.date))
+    const sortedData = data.sort((a, b) => a.timestamp - b.timestamp)
     console.log(`✅ Generated ${sortedData.length} weight entries (${sortedData[0].weight} → ${sortedData[sortedData.length - 1].weight} lbs)`)
     return sortedData
   }
@@ -286,7 +286,7 @@ class DataService {
 
       // Generate or use provided demo data
       const demoWeights = generateNew ? this.generateWeightLossData() : customDemoWeights
-      const demoGoal = customDemoGoal || '165'
+      const demoGoal = customDemoGoal || DEMO_DATA_CONFIG.DEFAULT_GOAL
 
       if (!demoWeights || demoWeights.length === 0) {
         throw new Error('No demo data to load')
@@ -304,7 +304,7 @@ class DataService {
         await this.saveGoal(demoGoal)
         // Mark that goal is from demo data
         if (this.storageType === 'localStorage') {
-          localStorage.setItem('healthTracker_isDemoGoal', 'true')
+          localStorage.setItem(STORAGE_KEYS.IS_DEMO_GOAL, 'true')
         }
         console.log(`🎯 Demo goal set to: ${demoGoal} lbs`)
       } else if (hasExistingGoal) {
@@ -347,10 +347,10 @@ class DataService {
       // Clear demo goal if it exists
       let goalCleared = false
       if (this.storageType === 'localStorage') {
-        const isDemoGoal = localStorage.getItem('healthTracker_isDemoGoal') === 'true'
+        const isDemoGoal = localStorage.getItem(STORAGE_KEYS.IS_DEMO_GOAL) === 'true'
         if (isDemoGoal) {
-          localStorage.removeItem('healthTracker_weightGoal')
-          localStorage.removeItem('healthTracker_isDemoGoal')
+          localStorage.removeItem(STORAGE_KEYS.GOAL)
+          localStorage.removeItem(STORAGE_KEYS.IS_DEMO_GOAL)
           goalCleared = true
           console.log('🎯 Demo goal cleared')
         }
