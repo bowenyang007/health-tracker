@@ -61,10 +61,10 @@ export const DailyEntryRow = ({
     <div>
       {/* Daily entry row */}
       <div 
-        className={`entry-row entry-row-expanded ${isExpanded ? 'expanded' : ''}`}
-        onClick={onClick}
+        className={`entry-row ${isExpanded ? 'expanded' : ''}`}
+        style={{ cursor: hasMultipleEntries ? 'pointer' : 'default' }}
       >
-        <div>
+        <div onClick={hasMultipleEntries ? onClick : undefined}>
           <div className="entry-weight">
             {weight.weight} lbs
             {weight.isAveraged && (
