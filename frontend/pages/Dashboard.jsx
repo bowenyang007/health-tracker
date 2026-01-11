@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Plus } from 'lucide-react'
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Label, LabelList } from 'recharts'
 import { format } from 'date-fns'
 import { prepareChartData } from '../utils/dataProcessing.js'
 import { dataService } from '../services/dataService.js'
@@ -13,6 +13,33 @@ const Dashboard = () => {
   const [goal, setGoal] = useState('')
   const [chartPeriod, setChartPeriod] = useState(CHART_PERIODS.WEEK) // 7, 30, or 90 days
   const [isLoading, setIsLoading] = useState(false)
+
+  // Custom label component for weight differences
+  const renderWeightDiffLabel = (props) => {
+    const { x, y, index, value } = props
+    
+    if (index === 0 || value === null || value === undefined) {
+      return null
+    }
+
+    const diff = parseFloat(value)
+    const displayValue = Math.abs(diff).toFixed(1)
+    const sign = diff > 0 ? '+' : '-'
+    const color = diff > 0 ? '#ef4444' : '#10b981' // red for gain, green for loss
+    
+    return (
+      <text
+        x={x}
+        y={y - 15}
+        fill={color}
+        fontSize="11"
+        fontWeight="600"
+        textAnchor="middle"
+      >
+        {sign}{displayValue}
+      </text>
+    )
+  }
 
   // Load data
   useEffect(() => {
@@ -75,12 +102,36 @@ const Dashboard = () => {
     const dateFormat = chartPeriod <= CHART_PERIODS.WEEK ? DATE_FORMATS.SHORT : DATE_FORMATS.MEDIUM
     const chartData = prepareChartData(weights, chartPeriod, dateFormat)
 
-    // Add goal line to each data point
+    // Determine label intervals based on data density
+    // For 7 days: show all labels
+    // For 30 days: show every ~3rd label
+    // For 90 days: show every ~7th label
+    const labelInterval = chartPeriod === CHART_PERIODS.WEEK ? 1 : 
+                         chartPeriod === CHART_PERIODS.MONTH ? 3 : 7
+
+    // Add goal line and weight differences to each data point
     const goalWeight = parseFloat(goal) || 0
-    return chartData.map(entry => ({
-      ...entry,
-      goal: goalWeight || undefined
-    }))
+    let lastLabelIndex = 0
+    
+    return chartData.map((entry, index) => {
+      let weightDiff = null
+      let showLabel = false
+      
+      // Show label at strategic intervals
+      if (index > 0 && (index % labelInterval === 0 || index === chartData.length - 1)) {
+        // Calculate difference from last labeled point, not just previous point
+        const diff = entry.weight - chartData[lastLabelIndex].weight
+        weightDiff = diff
+        showLabel = true
+        lastLabelIndex = index
+      }
+      
+      return {
+        ...entry,
+        goal: goalWeight || undefined,
+        weightDiff: showLabel ? weightDiff : null
+      }
+    })
   }
 
   const chartData = getChartData()
@@ -180,7 +231,7 @@ const Dashboard = () => {
           </div>
           {weights.length > 0 ? (
             <ResponsiveContainer width="100%" height={250}>
-              <LineChart data={chartData}>
+              <LineChart data={chartData} margin={{ top: 5, right: 30, left: 0, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="date" />
                 <YAxis
@@ -213,7 +264,12 @@ const Dashboard = () => {
                   strokeWidth={2}
                   dot={{ fill: '#3b82f6', strokeWidth: 2, r: 4 }}
                   activeDot={{ r: 6, stroke: '#3b82f6', strokeWidth: 2 }}
-                />
+                >
+                  <LabelList
+                    dataKey="weightDiff"
+                    content={renderWeightDiffLabel}
+                  />
+                </Line>
                 {goal && (
                   <Line
                     type="monotone"
