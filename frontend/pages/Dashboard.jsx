@@ -16,9 +16,10 @@ const Dashboard = () => {
 
   // Custom label component for weight differences
   const renderWeightDiffLabel = (props) => {
-    const { x, y, index, value } = props
+    const { x, y, value } = props
     
-    if (index === 0 || value === null || value === undefined) {
+    // Only show label if value is set (we control this in getChartData)
+    if (value === null || value === undefined) {
       return null
     }
 
@@ -39,6 +40,45 @@ const Dashboard = () => {
         {sign}{displayValue}
       </text>
     )
+  }
+
+  // Custom function to determine which data points should show labels
+  // We'll match the X-axis tick logic
+  const getXAxisTicks = (data) => {
+    if (data.length === 0) return []
+    
+    // Recharts typically shows 5-8 ticks on the X-axis
+    // We'll calculate appropriate intervals to match this behavior
+    const dataLength = data.length
+    let tickInterval
+    
+    if (dataLength <= 8) {
+      // Show all points
+      tickInterval = 1
+    } else if (dataLength <= 15) {
+      // Show every 2nd point (~7-8 ticks)
+      tickInterval = 2
+    } else if (dataLength <= 30) {
+      // Show every 4th point (~7-8 ticks)
+      tickInterval = 4
+    } else if (dataLength <= 50) {
+      // Show every 7th point (~7 ticks)
+      tickInterval = 7
+    } else {
+      // Show every 10th point (~5-10 ticks)
+      tickInterval = 10
+    }
+    
+    const ticks = []
+    for (let i = 0; i < dataLength; i += tickInterval) {
+      ticks.push(i)
+    }
+    // Always include the last point
+    if (ticks[ticks.length - 1] !== dataLength - 1) {
+      ticks.push(dataLength - 1)
+    }
+    
+    return ticks
   }
 
   // Load data
@@ -102,12 +142,9 @@ const Dashboard = () => {
     const dateFormat = chartPeriod <= CHART_PERIODS.WEEK ? DATE_FORMATS.SHORT : DATE_FORMATS.MEDIUM
     const chartData = prepareChartData(weights, chartPeriod, dateFormat)
 
-    // Determine label intervals based on data density
-    // For 7 days: show all labels
-    // For 30 days: show every ~3rd label
-    // For 90 days: show every ~7th label
-    const labelInterval = chartPeriod === CHART_PERIODS.WEEK ? 1 : 
-                         chartPeriod === CHART_PERIODS.MONTH ? 3 : 7
+    // Determine which indices should show labels (matching X-axis ticks)
+    const tickIndices = getXAxisTicks(chartData)
+    const tickSet = new Set(tickIndices)
 
     // Add goal line and weight differences to each data point
     const goalWeight = parseFloat(goal) || 0
@@ -115,21 +152,20 @@ const Dashboard = () => {
     
     return chartData.map((entry, index) => {
       let weightDiff = null
-      let showLabel = false
       
-      // Show label at strategic intervals
-      if (index > 0 && (index % labelInterval === 0 || index === chartData.length - 1)) {
-        // Calculate difference from last labeled point, not just previous point
-        const diff = entry.weight - chartData[lastLabelIndex].weight
-        weightDiff = diff
-        showLabel = true
-        lastLabelIndex = index
+      // Show label if this index corresponds to an X-axis tick
+      if (tickSet.has(index) && index > 0) {
+        // Calculate difference from last labeled point
+        const prevIndex = lastLabelIndex
+        const diff = entry.weight - chartData[prevIndex].weight
+        weightDiff = diff  // Set to actual value to show label
+        lastLabelIndex = index  // Update AFTER calculation
       }
       
       return {
         ...entry,
         goal: goalWeight || undefined,
-        weightDiff: showLabel ? weightDiff : null
+        weightDiff  // null means no label, number means show label
       }
     })
   }
